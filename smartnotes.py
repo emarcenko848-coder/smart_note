@@ -2,10 +2,89 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QLabel, QLineEdit, QTextEdit, QListWidget, QInputDialog, QHBoxLayout, QVBoxLayout, QFormLayout
 import os
 
-import json
-
 app = QApplication([])
 notes = []
+
+STYLE ="""
+font-weight: bold;
+    }
+    QPushButton:hover {
+        background-color: #D10000;
+        color: #fQWidget {
+        background-color: #470303;
+        color: #A13737;
+        font-family: 'Segoe UI', Arial, sans-serif;
+        font-size: 13px;
+    }
+
+
+    QTextEdit {
+        background-color: #853282;
+        color: #570A54;
+        border: 2px solid #D5E4EB;
+        border-radius: 10px;
+        font-size: 14px;
+        selection-background-color: #755074;
+    }
+   
+    QLineEdit {
+        background-color: #853282;
+        color: #570A54;
+        border: 2px solid #D5E4EB;
+        border-radius: 6px;
+        selection-background-color: #755074;
+    }
+   
+    QLineEdit:focus {
+        border: 2px solid #4183A6;
+    }
+
+
+    QListWidget {
+        background-color: #853282;
+        color: #570A54;
+        border: 2px solid #D5E4EB;
+        border-radius: 6px;
+        selection-background-color: #755074;
+    }
+   
+    QListWidget:item {
+        padding: 6px 8px;
+        border-raidus: 4px;
+    }
+   
+    QListWidget:item:selected {
+        background-color: #5C8796;
+        color: #570A54;
+    }
+   
+    QListWidget:item:hover:!selected {
+        background-color: #570A54;
+    }
+
+
+    QLabel {
+        font-weight: bold;
+        font-size: 15px;
+        color: #ffffff;
+        padding: 4px 0px 2px 2px;
+    }
+
+
+    QPushButton {
+        background-color: #ffffff;
+        color: #000000;
+        border: 2px solid #004933;
+        border-radius: 6px;
+        padding: 7px 12px;fffff;
+    }
+    QPushButton:pressed {
+        background-color: #082925;
+        color: #EAFBF9
+    }
+
+
+"""
 
 '''
 
@@ -15,6 +94,7 @@ notes = []
 notes_win = QWidget()
 notes_win.setWindowTitle("Smatr Notes")
 notes_win.resize(900,600)
+notes_win.setStyleSheet(STYLE)
 
 '''
 |Віджеи вікна|
@@ -75,12 +155,19 @@ def load_notes():
             break
         with open(filename, "r", encoding = "utf-8") as file:
             lines = file.read().split('\n')
-            lines = lines[0]
-            lines = lines[1]
-            lines = lines[2].split() if len(lines) > 2 else []
+            name = lines[0]
+            text = lines[1]
+            tags= lines[2].split() if len(lines) > 2 else []
+            notes.append([name, text ,tags])
+            list_notes.addItem(name)
+        index += 1
 
-
-
+def save_all_notes():
+    for i, note in enumerate(notes):
+        with open(f"{i}.txt", "w", encoding= "utf-8") as file:
+            file.write(note[0] + '\n')
+            file.write(note[1] + '\n')
+            file.write(''.join(note[2]) + '\n')
 
 def show_note():
     key = list_notes.selectedItems()[0].text()
@@ -131,8 +218,7 @@ def del_note():
                 break
                 for note in notes:
                     list_notes.addItems(note[0])
-        safe_all_notes()
-
+        save_all_notes()
 
 button_notes_delete.clicked.connect(del_note)
 
@@ -150,76 +236,46 @@ def add_tag():
                 list_tags.addItem(tag)
                 list_tags.addItem(tag)
                 field_tag.clear()
-        safe_all_notes() 
+        save_all_notes() 
 
 button_tag_create.clicked.connect(add_tag)
 
-def safe_all_notes():
-    for i, note in enumerate(notes):
-        with open(f"{i}.txt", "w", encoding="utf-8") as file:
-            file.write(note[0] + '\n')
-            file.write(note[1] + '\n')
-            file.write(''.join(note[2]) + '\n')
-
-def add_tag():  
-    if list_notes.selectedItems():
-        key = list_notes.selectedItems()[0]. text()
-        tag = field_tag.text()
-        if not tag in note[key]["теги"]:
-            note[key]["теги"].append(tag)
-            list_tags.addItems(tag)
-            field_tag.clear()
-        with open("notes data.json", "w", encoding = "utf-8") as file:
-            json.dump(note, file, sort_keys = True, ensure_ascii = True, indent = 2)
-    else:
-        print("Замітка для додавання тегу не обрана!")
-
-button_tag_create.clicked.connect(add_tag)
 
 def del_tag():
     if list_tags.selectedItems():
         key = list_notes.selectedItems()[0].text()
         tag = list_tags.selectedItems()[0].text()
-        note[key]["теги"].remove(tag)
-        list_tags.clear()
-        list_tags.addItems(note[key]["теги"])
-        with open("notes data.json", "w", encoding = "utf-8") as file:
-            json.dump(note, file, sort_kes = True, ensure_ascii = True, indent = 2)
-    else:
-        print("Тег не обрано!")
+        for note in notes:
+            if note[0] == key and tag in note[2]:
+                note[2].remove(tag)
+                list_tags.clear()
+                for note in notes:
+                    if note[0] == key:
+                        list_tags.addItems(note[2])
+                save_all_notes()
         
 button_tag_delete.clicked.connect(del_tag)
 
 def search_tag():
-    print(button_tag_search.text())
     tag = field_tag.text()
     if button_tag_search.text() == "Шукати нотатку за Тегом" and tag:
-        print(tag)
-        notes_filtered = {}
-        for i in note:
-            if tag in note[i]  ["теги"]:
-                notes_filtered [i] = note[i]
-        button_tag_search.setText("Скинути пошук")
-        list_notes.clear
-        list_tags.clear
-        list_notes.addItem(notes_filtered)
-        print(button_tag_search.text())
-    elif button_tag_search.text() + "Синути пошук":
-        field_tag.clear()
         list_notes.clear()
-        list_tags.clear()
-        list_notes.addItems(note)
-        button_tag_search.setText("Шукати нотатку за Тегом")
-        print(button_tag_search.text())
+        for note in notes:
+            if tag in note[2]:
+                list_notes.addItem(note[0])
+        button_tag_search.setText("Скинути пошук")
     else:
-        pass
+        list_notes.clear
+        for note in notes:
+            list_notes.addItem(note[0])
+        button_tag_search.setText("Шукати нотатку за Тегом")
+        field_tag.clear()
 
 button_tag_search.clicked.connect(search_tag)
 
-with open("notes_data.json", "r") as file:
-    note = json.load(file)
-list_notes.addItems(note)
 
+load_notes()
+notes_win.show()
 app.exec_()
 
 
